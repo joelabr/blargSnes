@@ -21,5 +21,10 @@
 
 void ClearConsole();
 void bprintf(char* fmt, ...);
+void ApplyScaling();
+
+void ContinueRendering();
+void FinishRendering();
+void RenderTopScreen();
 
 #endif

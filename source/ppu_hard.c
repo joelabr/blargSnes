@@ -24,6 +24,7 @@
 #include "mem.h"
 #include "snes.h"
 #include "ppu.h"
+#include "ui.h"
 
 #include "config.h"
 
@@ -430,7 +431,7 @@ u32 PPU_DecodeTile_8bpp_m7(u16* vram, u16* pal, u32* dst)
 
 u32 PPU_DecodeTile_8bpp_m7e(u16* vram, u16* pal, u32* dst, u32 prio)
 {
-	int i, j, k;
+	int i, j;
 	u8 p1, p2, p3, p4;
 	u32 col1, col2;
 	u32 nonzero = 0;
@@ -498,6 +499,8 @@ u32 PPU_StoreTileInCache(u32 type, u32 palid, u32 addr)
 	u32 isnew = 0;
 	u32 tempbuf[32];
 	
+  u32* pointer32 = 0;
+  u16* pointer16 = 0;
 	switch (type)
 	{
 		case TILE_2BPP: 
@@ -506,13 +509,21 @@ u32 PPU_StoreTileInCache(u32 type, u32 palid, u32 addr)
 			break;
 			
 		case TILE_4BPP: 
-			paldirty = *(u32*)&PPU.PaletteUpdateCount[palid << 2];
-			vramdirty = *(u16*)&PPU.VRAMUpdateCount[addr >> 4];
+      pointer32 = (u32*)&PPU.PaletteUpdateCount[palid << 2];
+      paldirty = *pointer32;
+
+      pointer16 = (u16*)&PPU.VRAMUpdateCount[addr >> 4];
+      vramdirty = *pointer16;
+			/*paldirty = *(u32*)&PPU.PaletteUpdateCount[palid << 2];*/
+			/*vramdirty = *(u16*)&PPU.VRAMUpdateCount[addr >> 4];*/
 			break;
 			
 		case TILE_8BPP: 
 			paldirty = PPU.PaletteUpdateCount256;
-			vramdirty = *(u32*)&PPU.VRAMUpdateCount[addr >> 4];
+
+      pointer32 = (u32*)&PPU.VRAMUpdateCount[addr >> 4];
+      vramdirty = *pointer32;
+			/*vramdirty = *(u32*)&PPU.VRAMUpdateCount[addr >> 4];*/
 			break;
 
 		case TILE_Mode7:
@@ -562,17 +573,17 @@ u32 PPU_StoreTileInCache(u32 type, u32 palid, u32 addr)
 	
 	switch (type)
 	{
-		case TILE_2BPP: nonzero = PPU_DecodeTile_2bpp(&PPU.VRAM[addr], &TempPalette[palid << 2], tempbuf); break;
-		case TILE_4BPP: nonzero = PPU_DecodeTile_4bpp(&PPU.VRAM[addr], &TempPalette[palid << 4], tempbuf); break;
+		case TILE_2BPP: nonzero = PPU_DecodeTile_2bpp((u16*)&PPU.VRAM[addr], &TempPalette[palid << 2], tempbuf); break;
+		case TILE_4BPP: nonzero = PPU_DecodeTile_4bpp((u16*)&PPU.VRAM[addr], &TempPalette[palid << 4], tempbuf); break;
 		
 		case TILE_8BPP: 
 			// TODO: direct color!
-			nonzero = PPU_DecodeTile_8bpp(&PPU.VRAM[addr], &TempPalette[0], tempbuf); 
+			nonzero = PPU_DecodeTile_8bpp((u16*)&PPU.VRAM[addr], &TempPalette[0], tempbuf); 
 			break;
 
-		case TILE_Mode7: nonzero = PPU_DecodeTile_8bpp_m7(&PPU.VRAM7[addr << 2], &TempPalette[0], tempbuf);	break;
-		case TILE_Mode7_1: nonzero = PPU_DecodeTile_8bpp_m7e(&PPU.VRAM7[addr << 2], &PPU.PaletteEx1[0], tempbuf, 0); break;
-		case TILE_Mode7_2: nonzero = PPU_DecodeTile_8bpp_m7e(&PPU.VRAM7[addr << 2], &PPU.PaletteEx2[0], tempbuf, 1); break;
+		case TILE_Mode7: nonzero = PPU_DecodeTile_8bpp_m7((u16*)&PPU.VRAM7[addr << 2], &TempPalette[0], tempbuf);	break;
+		case TILE_Mode7_1: nonzero = PPU_DecodeTile_8bpp_m7e((u16*)&PPU.VRAM7[addr << 2], &PPU.PaletteEx1[0], tempbuf, 0); break;
+		case TILE_Mode7_2: nonzero = PPU_DecodeTile_8bpp_m7e((u16*)&PPU.VRAM7[addr << 2], &PPU.PaletteEx2[0], tempbuf, 1); break;
 	}
 	
 	PPU_TileVRAMUpdate[key] = vramdirty;
@@ -639,7 +650,7 @@ void PPU_StartBG(u32 hi)
 	//bglEnableStencilTest(true);
 	//bglStencilFunc(GPU_ALWAYS, 0x00, 0xFF, 0x02);
 	bglEnableStencilTest(false);
-	bglStencilOp(GPU_KEEP, GPU_KEEP, GPU_KEEP);
+	bglStencilOp(GPU_STENCIL_KEEP, GPU_STENCIL_KEEP, GPU_STENCIL_KEEP);
 	
 	bglEnableDepthTest(false);
 	bglEnableAlphaTest(true);
@@ -691,7 +702,7 @@ void PPU_ClearMainScreen()
 	bglOutputBuffers(MainScreenTex, OBJDepthBuffer);
 	
 	bglEnableStencilTest(false);
-	bglStencilOp(GPU_KEEP, GPU_KEEP, GPU_KEEP);
+	bglStencilOp(GPU_STENCIL_KEEP, GPU_STENCIL_KEEP, GPU_STENCIL_KEEP);
 	
 	bglEnableDepthTest(false);
 	bglEnableAlphaTest(false);
@@ -782,7 +793,7 @@ void PPU_ClearSubScreen()
 	bglOutputBuffers(SubScreenTex, OBJDepthBuffer);
 	
 	bglEnableStencilTest(false);
-	bglStencilOp(GPU_KEEP, GPU_KEEP, GPU_KEEP);
+	bglStencilOp(GPU_STENCIL_KEEP, GPU_STENCIL_KEEP, GPU_STENCIL_KEEP);
 	
 	bglEnableDepthTest(false);
 	bglEnableAlphaTest(false);
@@ -868,7 +879,7 @@ void PPU_DrawWindowMask(u32 snum)
 	bglOutputBuffers(OBJDepthBuffer, OBJDepthBuffer);
 	
 	bglEnableStencilTest(false);
-	bglStencilOp(GPU_KEEP, GPU_KEEP, GPU_KEEP);
+	bglStencilOp(GPU_STENCIL_KEEP, GPU_STENCIL_KEEP, GPU_STENCIL_KEEP);
 	
 	bglEnableDepthTest(false);
 	bglEnableAlphaTest(false);
@@ -938,7 +949,7 @@ void PPU_ClearAlpha(u32 snum)
 	bglUseShader(&plainQuadShaderP);
 	
 	bglEnableStencilTest(false);
-	bglStencilOp(GPU_KEEP, GPU_KEEP, GPU_KEEP);
+	bglStencilOp(GPU_STENCIL_KEEP, GPU_STENCIL_KEEP, GPU_STENCIL_KEEP);
 	
 	bglEnableDepthTest(false);
 	bglEnableAlphaTest(false);
@@ -1002,13 +1013,13 @@ void PPU_HardRenderBG_8x8(u32 setalpha, u32 num, int type, u32 prio, int ystart,
 {
 	PPU_Background* bg = &PPU.BG[num];
 	PPU_Background* obg = &PPU.BG[2];
-	u16* tilemap;
-	u16* tilemapx;
-	u16* tilemapy;
+	u16* tilemap = 0;
+	u16* tilemapx = 0;
+	u16* tilemapy = 0;
 	int tileaddrshift = ((int[]){4, 5, 6})[type];
-	u32 xoff, yoff, oxoff, oyoff;
+	u32 xoff = 0, yoff = 0, oxoff = 0, oyoff = 0;
 	u16 curtile;
-	int x, y, ox, oy, yf;
+	int x = 0, y = 0, ox = 0, oy = 0, yf = 0;
 	u32 idx;
 	int systart = 1, syend, syend1, oyend;
 	int ntiles = 0;
@@ -1034,7 +1045,7 @@ void PPU_HardRenderBG_8x8(u32 setalpha, u32 num, int type, u32 prio, int ystart,
 	*vptr++ = coord;
 	
 	PPU_BGSection* s = &bg->Sections[0];
-	PPU_BGSection* o;
+	PPU_BGSection* o = 0;
 	for (;;)
 	{
 		syend = s->EndOffset;
@@ -1063,8 +1074,8 @@ void PPU_HardRenderBG_8x8(u32 setalpha, u32 num, int type, u32 prio, int ystart,
 			}
 			oxoff = o->XScroll & 0xF8;
 			oyoff = o->YScroll >> yshift;
-			tilemapx = PPU.VRAM + o->TilemapOffset + ((oyoff & 0xF8) << 3);
-			tilemapy = PPU.VRAM + o->TilemapOffset + (((oyoff + 8) & 0xF8) << 3);
+			tilemapx = (u16*)(PPU.VRAM + o->TilemapOffset + ((oyoff & 0xF8) << 3));
+			tilemapy = (u16*)(PPU.VRAM + o->TilemapOffset + (((oyoff + 8) & 0xF8) << 3));
 			if (oyoff & 0x100) if (o->Size & 0x2) tilemapx += (o->Size & 0x1) ? 2048 : 1024;
 			if ((oyoff+8) & 0x100) if (o->Size & 0x2) tilemapy += (o->Size & 0x1) ? 2048 : 1024;
 			syend1 = syend + (hi && PPU.Interlace ? 3 : 7);
@@ -1086,7 +1097,7 @@ void PPU_HardRenderBG_8x8(u32 setalpha, u32 num, int type, u32 prio, int ystart,
 				y = syend - 1;
 			}
 
-			tilemap = PPU.VRAM + s->TilemapOffset + ((yoff & 0xF8) << 3);
+			tilemap = (u16*)(PPU.VRAM + s->TilemapOffset + ((yoff & 0xF8) << 3));
 			if (yoff & 0x100)
 			{
 				if (s->Size & 0x2)
@@ -1128,7 +1139,7 @@ void PPU_HardRenderBG_8x8(u32 setalpha, u32 num, int type, u32 prio, int ystart,
 						vval = tilemapy[idx];
 					if (hval & validBit) hofs = ox + (hval & 0x1F8) - (hval & 0x200);
 					if (vval & validBit) vofs = y + (vval & 0x1FF) - (vval & 0x200);
-					tilemap = PPU.VRAM + s->TilemapOffset + ((vofs & 0xF8) << 3);
+					tilemap = (u16*)(PPU.VRAM + s->TilemapOffset + ((vofs & 0xF8) << 3));
 					if(vofs & 0x100) if(s->Size & 0x2) tilemap += (s->Size & 0x1) ? 2048 : 1024;
 					idx = (hofs & 0xF8) >> 3;
 					if (hofs & 0x100) if (s->Size & 0x1) idx += 1024;
@@ -1287,7 +1298,7 @@ void PPU_HardRenderBG_16x16(u32 setalpha, u32 num, int type, u32 prio, int ystar
 		
 		for (y = systart - (yoff&15); y < syend; y += yincr, yoff += 16)
 		{
-			tilemap = PPU.VRAM + s->TilemapOffset + ((yoff & 0x1F0) << 2);
+			tilemap = (u16*)(PPU.VRAM + s->TilemapOffset + ((yoff & 0x1F0) << 2));
 			if (yoff & 0x200)
 			{
 				if (s->Size & 0x2)
@@ -1968,7 +1979,7 @@ void PPU_HardRenderBG_Mode7(u32 setalpha, int ystart, int yend, u32 prio)
 
 			bglEnableStencilTest(true);
 			bglStencilFunc(GPU_EQUAL, 0x00, 0x01, 0xFF);
-			bglStencilOp(GPU_KEEP, GPU_KEEP, GPU_KEEP);
+			bglStencilOp(GPU_STENCIL_KEEP, GPU_STENCIL_KEEP, GPU_STENCIL_KEEP);
 	
 			bglEnableDepthTest(false);
 			bglEnableAlphaTest(true);
@@ -2204,7 +2215,7 @@ void PPU_HardRenderOBJs()
 	bglScissorMode(GPU_SCISSOR_NORMAL);
 		
 	bglEnableStencilTest(false);
-	bglStencilOp(GPU_KEEP, GPU_KEEP, GPU_KEEP);
+	bglStencilOp(GPU_STENCIL_KEEP, GPU_STENCIL_KEEP, GPU_STENCIL_KEEP);
 	
 	bglEnableDepthTest(false);
 	bglEnableAlphaTest(true);
@@ -2263,7 +2274,7 @@ void PPU_HardRenderOBJLayer(u32 setalpha, u32 prio, int ystart, int yend)
 	
 	bglEnableStencilTest(true);
 	bglStencilFunc(GPU_EQUAL, 0x00, 0x10, 0xFF);
-	bglStencilOp(GPU_KEEP, GPU_KEEP, GPU_KEEP);
+	bglStencilOp(GPU_STENCIL_KEEP, GPU_STENCIL_KEEP, GPU_STENCIL_KEEP);
 	
 	bglEnableDepthTest(true);
 	bglDepthFunc(GPU_EQUAL);
@@ -2419,7 +2430,7 @@ void PPU_RenderScanline_Hard(u32 line)
 		PPU.Mode7Dirty = 0;
 		
 		PPU.CurWindowSection = &PPU.WindowSections[0];
-		PPU_ComputeWindows_Hard(&PPU.CurWindowSection->Window);
+		PPU_ComputeWindows_Hard(&PPU.CurWindowSection->Window[0]);
 		PPU.WindowDirty = 0;
 		
 		PPU.CurColorEffect = &PPU.ColorEffectSections[0];
@@ -2559,7 +2570,7 @@ void PPU_RenderScanline_Hard(u32 line)
 			PPU.CurWindowSection->EndOffset = line;
 			PPU.CurWindowSection++;
 			
-			PPU_ComputeWindows_Hard(&PPU.CurWindowSection->Window);
+			PPU_ComputeWindows_Hard(&PPU.CurWindowSection->Window[0]);
 			PPU.WindowDirty = 0;
 		}
 		
@@ -2949,12 +2960,14 @@ void PPU_VBlank_Hard(int endLine)
 		bprintf("OVERFLOW %06X/200000 (%d%%)\n", taken, (taken*100)/0x200000);
 		
 	
-	GSPGPU_FlushDataCache(NULL, PPU_TileCache, 1024*1024*sizeof(u16));
+  // OBS! Possibly fix size calculation
+	GSPGPU_FlushDataCache(NULL, (u8*)PPU_TileCache, 1024*1024*sizeof(u16));
 	//GX_SetDisplayTransfer(NULL, (u32*)PPU_TileCacheRAM, 0x04000400, (u32*)PPU_TileCache, 0x04000400, 0x3308);
 	//gspWaitForPPF();
 	//GX_RequestDma(NULL, (u32*)PPU_TileCacheRAM, (u32*)PPU_TileCache, 1024*1024*sizeof(u16));
 	//gspWaitForDMA();
 	
-	GSPGPU_FlushDataCache(NULL, Mode7ColorBuffer, 256*512*sizeof(u16));
+  // OBS! Possibly fix size calculation
+	GSPGPU_FlushDataCache(NULL, (u8*)Mode7ColorBuffer, 256*512*sizeof(u16));
 }
 

@@ -16,6 +16,7 @@
     with blargSnes. If not, see http://www.gnu.org/licenses/.
 */
 
+#include <string.h>
 #include <3ds.h>
 
 #include "main.h"
@@ -91,7 +92,7 @@ u8 SNES_ExecTrap[8192] __attribute__((aligned(256)));
 void SNES_Init()
 {
 	// TODO get rid of this junk!
-	SNES_Status = &_Mem_PtrTable[0];
+	SNES_Status = (SNES_StatusData*)&_Mem_PtrTable[0];
 	Mem_PtrTable = &_Mem_PtrTable[SNESSTATUS_SIZE >> 2];
 }
 
@@ -162,7 +163,9 @@ void SNES_Reset()
 
 	for (i = 0; i < (128 * 1024); i += 4)
 	{
-		*(u32*)&SNES_SysRAM[i] = randblarg ^ (randblarg << 15) ^ (randblarg << 26) ^ (randblarg * 0x00700000);
+    u32* SNES_SysRAM32 = (u32*)&SNES_SysRAM[i];
+
+		*SNES_SysRAM32 = randblarg ^ (randblarg << 15) ^ (randblarg << 26) ^ (randblarg * 0x00700000);
 		randblarg = (randblarg * 0x17374) ^ (randblarg * 0x327) ^ (randblarg << 2) ^ (randblarg << 17);
 	}
 	

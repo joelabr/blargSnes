@@ -16,9 +16,13 @@
     with blargSnes. If not, see http://www.gnu.org/licenses/.
 */
 
+#include <string.h>
+#include <strings.h>
+
 #include <3ds.h>
 #include "ui.h"
 #include "config.h"
+#include "mem.h"
 
 
 extern FS_archive sdmcArchive;
@@ -178,7 +182,8 @@ bool IsGoodFile(FS_dirent* entry)
 
 void DrawROMList()
 {
-	int i, x, y, y2;
+	//int i, x, y, y2;
+	int i, y;
 	int maxfile;
 	int menuy;
 	
@@ -315,7 +320,7 @@ void ROMMenu_Init()
 
 	head = SortList(head);
 
-	fileIdx = (char**)MemAlloc(nfiles * sizeof(char*));
+	fileIdx = (struct LISTITEM**)MemAlloc(nfiles * sizeof(struct LISTITEM*));
 
 	curr = head;
 	for(i = 0; i < nfiles; i++)

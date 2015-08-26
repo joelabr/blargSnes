@@ -2,9 +2,11 @@
 // Credits go to Archeide and whoever else participated in this.
 
 #include <3ds.h>
+#include <string.h>
 
 #include "spc700.h"
 #include "mixrate.h"
+#include "ui.h"
 
 #define ALIGNED __attribute__ ((aligned(4)))
 
@@ -25,6 +27,8 @@ void DspWriteByte(u8 val, u8 address);
 
 void DSP_BufferSwap();
 void DSP_ReplayWrites(u32 idx);
+
+void DspGenerateNoise();
 
 struct _DspChannel {
     int sampleSpeed;

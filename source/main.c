@@ -120,7 +120,7 @@ int exitspc = 0;
 // mixes 127995 samples every 4 seconds, instead of 128000 (128038.1356)
 // +43 samples every 4 seconds
 // +1 sample every 32 second
-void SPCThread(u32 blarg)
+void SPCThread()
 {
 	//const double samplerate = 67027964.0 / (double)((u32)(67027964.0 / 32000.0));
 	const double samplerate = 67030870.0 / (double)((u32)(67030870.0 / 32000.0));
@@ -378,7 +378,8 @@ void ApplyScaling()
 	screenVertices[5*0 + 0] = x1; screenVertices[5*0 + 1] = y1; screenVertices[5*0 + 4] = texy; 
 	screenVertices[5*1 + 0] = x2; screenVertices[5*1 + 1] = y2; 
 	
-	GSPGPU_FlushDataCache(NULL, (u32*)screenVertices, 5*2*sizeof(float));
+  // May need to multiply the size by 4 to get it right
+	GSPGPU_FlushDataCache(NULL, (u8*)screenVertices, 5*2*sizeof(float));
 }
 
 
@@ -796,7 +797,7 @@ bool StartROM(char* path, char* dir)
 	if (res)
 	{
 		bprintf("Failed to create SPC700 thread:\n -> %08X\n", res);
-		spcthread = NULL;
+		spcthread = 0;
 	}
 	
 	bprintf("ROM loaded, running...\n");
@@ -920,7 +921,9 @@ int main()
 	// copy splashscreen
 	u32* tempbuf = (u32*)linearAlloc(256*256*4);
 	CopyBitmapToTexture(screenfill, tempbuf, 256, 224, 0xFF, 0, 32, 0x0);
-	GSPGPU_FlushDataCache(NULL, tempbuf, 256*256*4);
+
+  // OBS! May need correction in size calculation
+	GSPGPU_FlushDataCache(NULL, (u8*)tempbuf, 256*256*4);
 
 	GX_SetDisplayTransfer(NULL, tempbuf, 0x01000100, (u32*)SNESFrame, 0x01000100, 0x3);
 	//gspWaitForPPF();
@@ -998,7 +1001,9 @@ int main()
 						ApplyScaling();
 						u32* tempbuf = (u32*)linearAlloc(256*256*4);
 						CopyBitmapToTexture(screenfill, tempbuf, 256, 224, 0xFF, 0, 32, 0x0);
-						GSPGPU_FlushDataCache(NULL, tempbuf, 256*256*4);
+
+            // OBS! Size calculation may need correction
+						GSPGPU_FlushDataCache(NULL, (u8*)tempbuf, 256*256*4);
 
 						GX_SetDisplayTransfer(NULL, tempbuf, 0x01000100, (u32*)SNESFrame, 0x01000100, 0x3);
 						//gspWaitForPPF();
@@ -1026,7 +1031,7 @@ int main()
 						{
 							u32 timestamp = (u32)(svcGetSystemTick() / 446872);
 							char file[256];
-							snprintf(file, 256, "/blargSnes%08d.bmp", timestamp);
+							snprintf(file, 256, "/blargSnes%08u.bmp", (unsigned int)timestamp);
 							if (TakeScreenshot(file))
 							{
 								bprintf("Screenshot saved as:\n");

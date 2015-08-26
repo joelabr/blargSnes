@@ -21,6 +21,7 @@
 #include "blargGL.h"
 #include "snes.h"
 #include "ppu.h"
+#include "mem.h"
 
 
 extern void* vertexBuf;
@@ -1022,7 +1023,8 @@ int PPU_RenderOBJ(u8* oam, u32 oamextra, u32 ymask, u16* buffer, u32 line)
 	else
 		i = xoff;
 		
-	attrib = *(u16*)&oam[2];
+  u16* pointer16 = (u16*)&oam[2];
+	attrib = *pointer16;
 	
 	idx = (attrib & 0x01FF) << 4;
 	
@@ -1315,17 +1317,26 @@ void PPU_RenderScanline_Soft(u32 line)
 		for (i = 0; i < 256; i += 2)
 			*(u32*)&mbuf[i] = backdrop;
 	}
+
+  u32* pointer32 = 0;
 	
 	// sub backdrop
 	backdrop = PPU.SubBackdrop;
 	backdrop |= (backdrop << 16);
 	for (i = 0; i < 256; i += 2)
-		*(u32*)&sbuf[i] = backdrop;
+  {
+    pointer32 = (u32*)&sbuf[i];
+		*pointer32 = backdrop;
+  }
 	
 	for (i = 16; i < 272; i += 2)
-		*(u32*)&PPU.OBJBuffer[i] = 0xFFFFFFFF;
+  {
+    pointer32 = (u32*)&PPU.OBJBuffer[i];
+		*pointer32 = 0xFFFFFFFF;
+  }
 		
-	*(u32*)&PPU.SpritesOnLine[0] = 0;
+  pointer32 = (u32*)&PPU.SpritesOnLine[0];
+  *pointer32 = 0;
 	
 	
 	if ((PPU.MainScreen|PPU.SubScreen) & 0x10)

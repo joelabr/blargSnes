@@ -82,7 +82,9 @@ void Audio_Pause()
 		}
 	
 		memset(Audio_Buffer, 0, MIXBUFSIZE*4*2);
-		GSPGPU_FlushDataCache(NULL, Audio_Buffer, MIXBUFSIZE*4*2);
+
+    // OBS! Possibly fix size calculation
+		GSPGPU_FlushDataCache(NULL, (u8*)Audio_Buffer, MIXBUFSIZE*4*2);
 		isPlaying = false;
 	}
 }
@@ -144,7 +146,9 @@ bool Audio_Begin()
 	    return 0;
  
 	memset(Audio_Buffer, 0, MIXBUFSIZE*4*2);
-	GSPGPU_FlushDataCache(NULL, Audio_Buffer, MIXBUFSIZE*4*2);
+
+  // OBS! Possibly fix size calculation
+	GSPGPU_FlushDataCache(NULL, (u8*)Audio_Buffer, MIXBUFSIZE*4*2);
  
 	if (Audio_Type == 1)
 	{

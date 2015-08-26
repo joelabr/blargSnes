@@ -36,7 +36,9 @@ u8 DMA_Read8(u32 addr)
 
 u16 DMA_Read16(u32 addr)
 {
-	u16 ret = (addr > 0x7F) ? (SNES_Status->LastBusVal|(SNES_Status->LastBusVal<<8)) : *(u16*)&DMA_Chans[addr];
+  u16* DMA_Chans16 = (u16*)&DMA_Chans[addr];
+
+	u16 ret = (addr > 0x7F) ? (SNES_Status->LastBusVal|(SNES_Status->LastBusVal<<8)) : *DMA_Chans16;
 	return ret;
 }
 
@@ -50,7 +52,8 @@ void DMA_Write16(u32 addr, u16 val)
 {
 	if (addr < 0x80)
 	{
-		*(u16*)&DMA_Chans[addr] = val;
+    u16* DMA_Chans16 = (u16*)&DMA_Chans[addr];
+		*DMA_Chans16 = val;
 	}
 }
 
@@ -92,11 +95,13 @@ void DMA_Enable(u8 flag)
 				{
 					if (PPU.OAMAddr >= 0x200)
 					{
-						*(u16*)&PPU.OAM[PPU.OAMAddr & 0x21F] = SNES_Read16(membank|memaddr);
+            u16* PPU_OAM16 = (u16*)&PPU.OAM[PPU.OAMAddr & 0x21F];
+						*PPU_OAM16 = SNES_Read16(membank|memaddr);
 					}
 					else
 					{
-						*(u16*)&PPU.OAM[PPU.OAMAddr] = SNES_Read16(membank|memaddr);
+						u16* PPU_OAM16 = (u16*)&PPU.OAM[PPU.OAMAddr];
+            *PPU_OAM16 = SNES_Read16(membank|memaddr);
 					}
 					memaddr += maddrinc<<1;
 					bytecount -= 2;
@@ -124,9 +129,11 @@ void DMA_Enable(u8 flag)
 				{
 					u16 newval = SNES_Read16(membank|memaddr);
 					u32 newaddr = PPU_TranslateVRAMAddress(PPU.VRAMAddr);
-					if (newval != *(u16*)&PPU.VRAM[newaddr])
+
+          u16* PPU_VRAM16 = (u16*)&PPU.VRAM[newaddr];
+					if (newval != *PPU_VRAM16)
 					{
-						*(u16*)&PPU.VRAM[newaddr] = newval;
+						*PPU_VRAM16 = newval;
 						PPU.VRAMUpdateCount[newaddr >> 4]++;
 						PPU.VRAM7[newaddr >> 1] = newval >> 8;
 						PPU.VRAM7UpdateCount[newaddr >> 7]++;

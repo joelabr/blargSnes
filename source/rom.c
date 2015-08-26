@@ -25,6 +25,8 @@
 
 #include "cpu.h"
 #include "snes.h"
+#include "main.h"
+#include "mem.h"
 
 
 u8* ROM_Buffer;
@@ -189,12 +191,16 @@ int ROM_ScoreHeader(Handle file, u32 offset)
 	else // look for a more atypical sequence
 	{
 		u8 firstbytes[0x40];
-		*(u32*)&firstbytes[0] = firstops;
+
+    u32* firstbytes32 = (u32*)&firstbytes[0];
+
+		*firstbytes32 = firstops;
 		FSFILE_Read(file, &bytesread, (offset - 0x7FC0) + (resetvec - 0x8000) + 4, (u32*)&firstbytes[4], 0x3C);
 		
 		for (i = 0; i < 0x3F; i++)
 		{
-			if (*(u16*)&firstbytes[i] == 0xFB18)
+      u16* firstbytes16 = (u16*)&firstbytes[i];
+			if (*firstbytes16 == 0xFB18)
 			{
 				score += 90;
 				break;

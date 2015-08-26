@@ -65,6 +65,8 @@ void CPU_Run();
 void CPU_TriggerIRQ();
 void CPU_TriggerNMI();
 
+void CPU_MainLoop();
+
 // debugging crap
 u32 CPU_GetPC();
 u32 CPU_GetReg(u32 reg);

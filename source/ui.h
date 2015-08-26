@@ -23,6 +23,8 @@
 
 #define RGB(r,g,b) ((b) | ((g) << 8) | ((r) << 16))
 
+void bprintf(char* fmt, ...);
+
 void UI_SetFramebuffer(u8* buffer);
 void ClearFramebuffer();
 void DrawRect(int x1, int x2, int y1, int y2, u32 color);
@@ -34,6 +36,11 @@ void DrawText(int x, int y, u32 color, char* str);
 void DrawButton(int x, int y, int width, u32 color, char* text);
 void DrawCheckBox(int x, int y, u32 color, char* text, bool check);
 
+void DrawToolbar(char * dir);
+bool HandleToolbar(u32 x, u32 y);
+
+void DrawConsole();
+
 
 typedef struct
 {
@@ -42,7 +49,7 @@ typedef struct
 	
 	void (*Render)(bool force);
 	void (*ButtonPress)(u32 btn);
-	void (*Touch)(bool touch, u32 x, u32 y);
+	void (*Touch)(int touch, u32 x, u32 y);
 	
 } UIController;
 

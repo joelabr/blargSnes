@@ -225,7 +225,7 @@ typedef struct
 typedef struct
 {
 	u8 EndOffset;
-	u8 *OBJWidth, *OBJHeight;
+	const u8 *OBJWidth, *OBJHeight;
 	u16 OBJTilesetAddr;
 	u32 OBJGap;
 } PPU_OBJSection;
@@ -279,8 +279,8 @@ typedef struct
 	u16 OAMReload;
 	u8 OAM[0x220];
 	
-	u8* OBJWidth;
-	u8* OBJHeight;
+	const u8* OBJWidth;
+	const u8* OBJHeight;
 
 
 	u8 CurBrightness;
@@ -457,5 +457,10 @@ void PPU_DeInit_Hard();
 
 void PPU_RenderScanline_Hard(u32 line);
 void PPU_VBlank_Hard();
+
+void PPU_ComputeWindows(PPU_WindowSegment* s);
+
+void PPU_BlendScreens(u32 colorformat);
+u32 PPU_TranslateVRAMAddress(u32 addr);
 
 #endif
