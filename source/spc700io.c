@@ -37,10 +37,8 @@ void SPC_InitMisc()
 	memset(&SPC_RAM[0], 0, 0x10040);
 	memcpy(&SPC_RAM[0xFFC0], &SPC_ROM[0], 64);
 
-	
-  u32* SPC_IOPorts32 = (u32*)&SPC_IOPorts[0];
-  SPC_IOPorts32[0] = 0; // SPC_IOPorts[0] - SPC_IOPorts[3]
-  SPC_IOPorts32[1] = 0; // SPC_IOPorts[4] - SPC_IOPorts[7]
+  *(u32*)&SPC_IOPorts[0] = 0;
+  *(u32*)&SPC_IOPorts[4] = 0;
 	
 	SPC_TimerEnable = 0;
 	SPC_TimerReload[0] = 0;
@@ -79,12 +77,10 @@ u8 SPC_IORead8(u16 addr)
 u16 SPC_IORead16(u16 addr)
 {
 	u16 ret = 0;
-  u16* SPC_IOPorts16 = (u16*)&SPC_IOPorts[0];
-
 	switch (addr)
 	{
-		case 0xF4: ret = SPC_IOPorts16[0]; break;
-		case 0xF6: ret = SPC_IOPorts16[1]; break;
+		case 0xF4: ret = *(u16*)&SPC_IOPorts[0]; break;
+		case 0xF6: ret = *(u16*)&SPC_IOPorts[2]; break;
 		
 		default:
 			ret = SPC_IORead8(addr);
@@ -122,16 +118,8 @@ void SPC_IOWrite8(u16 addr, u8 val)
 				else
 					SPC_TimerVal[2].Val = SPC_TimerReload[2];
 				
-				if (val & 0x10) 
-        {
-          u16* SPC_IOPorts16 = (u16*)&SPC_IOPorts[0];
-          *SPC_IOPorts16 = 0x0000;
-        }
-				if (val & 0x20)
-        {
-          u16* SPC_IOPorts16 = (u16*)&SPC_IOPorts[2];
-          *SPC_IOPorts16 = 0x0000;
-        }
+				if (val & 0x10) *(u16*)&SPC_IOPorts[0] = 0x0000;
+				if (val & 0x20) *(u16*)&SPC_IOPorts[2] = 0x0000;
 				
 				SPC_ROMAccess = (val & 0x80) ? 1:0;
 			}
@@ -158,12 +146,10 @@ void SPC_IOWrite8(u16 addr, u8 val)
 
 void SPC_IOWrite16(u16 addr, u16 val)
 {
-  u16* SPC_IOPorts16 = (u16*)&SPC_IOPorts[4];
-
 	switch (addr)
 	{
-		case 0xF4: SPC_IOPorts16[0] = val; break;
-		case 0xF6: SPC_IOPorts16[1] = val; break;
+		case 0xF4: *(u16*)&SPC_IOPorts[4] = val; break;
+		case 0xF6: *(u16*)&SPC_IOPorts[6] = val; break;
 		
 		default:
 			SPC_IOWrite8(addr, val & 0xFF);

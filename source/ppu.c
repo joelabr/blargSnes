@@ -388,7 +388,6 @@ void SPC_Compensate()
 u8 PPU_Read8(u32 addr)
 {
 	u8 ret = 0;
-  u16* pointer16 = 0;
 	switch (addr)
 	{
 		case 0x34: ret = PPU.MulResult & 0xFF; break;
@@ -415,9 +414,7 @@ u8 PPU_Read8(u32 addr)
 				if (!(PPU.VRAMInc & 0x80))
 				{
 					addr = PPU_TranslateVRAMAddress(PPU.VRAMAddr);
-
-          pointer16 = (u16*)&PPU.VRAM[addr];
-					PPU.VRAMPref = *pointer16;
+					PPU.VRAMPref = *(u16*)&PPU.VRAM[addr];
 
 					PPU.VRAMAddr += PPU.VRAMStep;
 				}
@@ -429,9 +426,7 @@ u8 PPU_Read8(u32 addr)
 				if (PPU.VRAMInc & 0x80)
 				{
 					addr = PPU_TranslateVRAMAddress(PPU.VRAMAddr);
-
-          pointer16 = (u16*)&PPU.VRAM[addr];
-					PPU.VRAMPref = *pointer16;
+					PPU.VRAMPref = *(u16*)&PPU.VRAM[addr];
 
 					PPU.VRAMAddr += PPU.VRAMStep;
 				}
@@ -500,15 +495,13 @@ u8 PPU_Read8(u32 addr)
 u16 PPU_Read16(u32 addr)
 {
 	u16 ret = 0;
-  u16* SPC_IOPorts16 = (u16*)&SPC_IOPorts[0];
-
 	switch (addr)
 	{
 		// not in the right place, but well
 		// our I/O functions are mapped to the whole $21xx range
 		
-		case 0x40: ret = SPC_IOPorts16[2]; break; // SPC_IOPorts[4] - SPC_IOPorts[5]
-		case 0x42: ret = SPC_IOPorts16[3]; break; // SPC_IOPorts[6] - SPC_IOPorts[7]
+		case 0x40: ret = *(u16*)&SPC_IOPorts[4]; break;
+		case 0x42: ret = *(u16*)&SPC_IOPorts[6]; break;
 		
 		default:
 			ret = PPU_Read8(addr);
@@ -521,8 +514,6 @@ u16 PPU_Read16(u32 addr)
 
 void PPU_Write8(u32 addr, u8 val)
 {
-  u16* pointer16 = 0;
-
 	switch (addr)
 	{
 		case 0x00: // force blank/master brightness
@@ -578,8 +569,7 @@ void PPU_Write8(u32 addr, u8 val)
 			}
 			else if (PPU.OAMAddr & 0x1)
 			{
-        pointer16 = (u16*)&PPU.OAM[PPU.OAMAddr - 1];
-				*pointer16 = PPU.OAMVal | (val << 8);
+				*(u16*)&PPU.OAM[PPU.OAMAddr - 1] = PPU.OAMVal | (val << 8);
 			}
 			else
 			{
@@ -642,16 +632,14 @@ void PPU_Write8(u32 addr, u8 val)
 			PPU.VRAMAddr |= (val << 1);
 			addr = PPU_TranslateVRAMAddress(PPU.VRAMAddr);
 
-      pointer16 = (u16*)&PPU.VRAM[addr];
-			PPU.VRAMPref = *pointer16;
+			PPU.VRAMPref = *(u16*)&PPU.VRAM[addr];
 			break;
 		case 0x17:
 			PPU.VRAMAddr &= 0x01FE;
 			PPU.VRAMAddr |= ((val & 0x7F) << 9);
 			addr = PPU_TranslateVRAMAddress(PPU.VRAMAddr);
 
-      pointer16 = (u16*)&PPU.VRAM[addr];
-			PPU.VRAMPref = *pointer16;
+			PPU.VRAMPref = *(u16*)&PPU.VRAM[addr];
 			break;
 		
 		case 0x18: // VRAM shit
@@ -914,8 +902,6 @@ void PPU_Write8(u32 addr, u8 val)
 
 void PPU_Write16(u32 addr, u16 val)
 {
-  u16* pointer16 = 0;
-
 	switch (addr)
 	{
 		// optimized route
@@ -924,17 +910,15 @@ void PPU_Write16(u32 addr, u16 val)
 			PPU.VRAMAddr = (val << 1) & 0xFFFEFFFF;
 			addr = PPU_TranslateVRAMAddress(PPU.VRAMAddr);
 
-      pointer16 = (u16*)&PPU.VRAM[addr];
-			PPU.VRAMPref = *pointer16;
+			PPU.VRAMPref = *(u16*)&PPU.VRAM[addr];
 			break;
 			
 		case 0x18:
 			addr = PPU_TranslateVRAMAddress(PPU.VRAMAddr);
 
-      pointer16 = (u16*)&PPU.VRAM[addr];
-			if (*pointer16 != val)
+			if (*(u16*)&PPU.VRAM[addr] != val)
 			{
-				*pointer16 = val;
+				*(u16*)&PPU.VRAM[addr] = val;
 				PPU.VRAMUpdateCount[addr >> 4]++;
 				PPU.VRAM7[addr >> 1] = val >> 8;
 				PPU.VRAM7UpdateCount[addr >> 7]++;
@@ -942,9 +926,9 @@ void PPU_Write16(u32 addr, u16 val)
 			PPU.VRAMAddr += PPU.VRAMStep;
 			break;
 			
-		case 0x40: SPC_Compensate(); pointer16 = (u16*)&SPC_IOPorts[0]; *pointer16 = val; break;
-		case 0x41: SPC_Compensate(); pointer16 = (u16*)&SPC_IOPorts[1]; *pointer16 = val; break;
-		case 0x42: SPC_Compensate(); pointer16 = (u16*)&SPC_IOPorts[2]; *pointer16 = val; break;
+		case 0x40: SPC_Compensate(); *(u16*)&SPC_IOPorts[0] = val; break;
+		case 0x41: SPC_Compensate(); *(u16*)&SPC_IOPorts[1] = val; break;
+		case 0x42: SPC_Compensate(); *(u16*)&SPC_IOPorts[2] = val; break;
 		
 		case 0x3F:
 		case 0x43: bprintf("!! write $21%02X %04X\n", addr, val); break;

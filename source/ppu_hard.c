@@ -499,8 +499,6 @@ u32 PPU_StoreTileInCache(u32 type, u32 palid, u32 addr)
 	u32 isnew = 0;
 	u32 tempbuf[32];
 	
-  u32* pointer32 = 0;
-  u16* pointer16 = 0;
 	switch (type)
 	{
 		case TILE_2BPP: 
@@ -509,21 +507,13 @@ u32 PPU_StoreTileInCache(u32 type, u32 palid, u32 addr)
 			break;
 			
 		case TILE_4BPP: 
-      pointer32 = (u32*)&PPU.PaletteUpdateCount[palid << 2];
-      paldirty = *pointer32;
-
-      pointer16 = (u16*)&PPU.VRAMUpdateCount[addr >> 4];
-      vramdirty = *pointer16;
-			/*paldirty = *(u32*)&PPU.PaletteUpdateCount[palid << 2];*/
-			/*vramdirty = *(u16*)&PPU.VRAMUpdateCount[addr >> 4];*/
+      paldirty = *(u32*)&PPU.PaletteUpdateCount[palid << 2];
+      vramdirty = *(u16*)&PPU.VRAMUpdateCount[addr >> 4];
 			break;
 			
 		case TILE_8BPP: 
 			paldirty = PPU.PaletteUpdateCount256;
-
-      pointer32 = (u32*)&PPU.VRAMUpdateCount[addr >> 4];
-      vramdirty = *pointer32;
-			/*vramdirty = *(u32*)&PPU.VRAMUpdateCount[addr >> 4];*/
+      vramdirty = *(u32*)&PPU.VRAMUpdateCount[addr >> 4];
 			break;
 
 		case TILE_Mode7:
